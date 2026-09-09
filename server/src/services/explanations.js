@@ -3,6 +3,49 @@
 
 const POSITIVE_THRESHOLD = 2 // "more than half the days" or higher = clinically notable per item
 
+// Map intake enum codes to human-readable bilingual labels.
+const INTAKE_LABELS = {
+  gender: {
+    male: { zh: '男', en: 'male' },
+    female: { zh: '女', en: 'female' },
+    other: { zh: '其他/不愿透露', en: 'other/prefer not to say' }
+  },
+  episodeDuration: {
+    '<2w': { zh: '少于 2 周', en: 'less than 2 weeks' },
+    '2w-1m': { zh: '2 周–1 个月', en: '2 weeks to 1 month' },
+    '1-3m': { zh: '1–3 个月', en: '1 to 3 months' },
+    '3-12m': { zh: '3–12 个月', en: '3 to 12 months' },
+    '>1y': { zh: '超过 1 年', en: 'more than 1 year' }
+  },
+  treatmentHistory: {
+    none: { zh: '从未就诊/治疗', en: 'never sought treatment' },
+    therapy: { zh: '做过心理咨询/治疗', en: 'had psychotherapy/counseling' },
+    meds: { zh: '服用过抗抑郁药物', en: 'took antidepressants' },
+    both: { zh: '心理治疗+药物均有过', en: 'both therapy and medication' },
+    hospital: { zh: '曾因情绪问题住院', en: 'hospitalized for mood problems' }
+  },
+  education: {
+    middle: { zh: '初中及以下', en: 'middle school or below' },
+    high: { zh: '高中/中专', en: 'high school' },
+    college: { zh: '大专/本科', en: 'college/bachelor' },
+    postgrad: { zh: '硕士及以上', en: 'master or above' }
+  },
+  occupation: {
+    student: { zh: '学生', en: 'student' },
+    employed: { zh: '在职', en: 'employed' },
+    freelance: { zh: '自由职业', en: 'freelance' },
+    retired: { zh: '退休', en: 'retired' },
+    unemployed: { zh: '待业/无业', en: 'unemployed' }
+  }
+}
+
+function labelOf(field, value, lang) {
+  if (value == null || value === '') return null
+  const entry = INTAKE_LABELS[field]?.[value]
+  if (entry) return entry[lang]
+  return String(value)
+}
+
 export function buildResult(scale, score, intake = {}) {
   const valueMap = new Map(score.itemValues.map((v) => [v.itemId, v.value]))
   const optionMap = new Map((scale.options || []).map((o) => [o.value, o]))
@@ -161,22 +204,22 @@ function buildBasisEn(scale, score, items, notableItems, intake) {
 
 function intakeContextZh(intake) {
   const parts = []
-  if (intake.age != null) parts.push(`年龄 ${intake.age}`)
-  if (intake.gender) parts.push(`性别 ${intake.gender}`)
-  if (intake.episodeDuration) parts.push(`病程 ${intake.episodeDuration}`)
-  if (intake.treatmentHistory) parts.push(`治疗史 ${intake.treatmentHistory}`)
-  if (intake.education) parts.push(`教育 ${intake.education}`)
-  if (intake.occupation) parts.push(`职业 ${intake.occupation}`)
+  if (intake.age != null && intake.age !== '') parts.push(`年龄 ${intake.age}`)
+  const g = labelOf('gender', intake.gender, 'zh'); if (g) parts.push(`性别 ${g}`)
+  const d = labelOf('episodeDuration', intake.episodeDuration, 'zh'); if (d) parts.push(`病程 ${d}`)
+  const th = labelOf('treatmentHistory', intake.treatmentHistory, 'zh'); if (th) parts.push(`治疗史 ${th}`)
+  const e = labelOf('education', intake.education, 'zh'); if (e) parts.push(`教育 ${e}`)
+  const o = labelOf('occupation', intake.occupation, 'zh'); if (o) parts.push(`职业 ${o}`)
   return parts.join('，')
 }
 
 function intakeContextEn(intake) {
   const parts = []
-  if (intake.age != null) parts.push(`age ${intake.age}`)
-  if (intake.gender) parts.push(`gender ${intake.gender}`)
-  if (intake.episodeDuration) parts.push(`duration ${intake.episodeDuration}`)
-  if (intake.treatmentHistory) parts.push(`treatment history ${intake.treatmentHistory}`)
-  if (intake.education) parts.push(`education ${intake.education}`)
-  if (intake.occupation) parts.push(`occupation ${intake.occupation}`)
+  if (intake.age != null && intake.age !== '') parts.push(`age ${intake.age}`)
+  const g = labelOf('gender', intake.gender, 'en'); if (g) parts.push(`gender ${g}`)
+  const d = labelOf('episodeDuration', intake.episodeDuration, 'en'); if (d) parts.push(`duration ${d}`)
+  const th = labelOf('treatmentHistory', intake.treatmentHistory, 'en'); if (th) parts.push(`treatment ${th}`)
+  const e = labelOf('education', intake.education, 'en'); if (e) parts.push(`education ${e}`)
+  const o = labelOf('occupation', intake.occupation, 'en'); if (o) parts.push(`occupation ${o}`)
   return parts.join(', ')
 }

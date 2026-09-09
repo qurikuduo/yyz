@@ -1,0 +1,30 @@
+import type { ReactNode } from 'react'
+import { Link } from 'react-router-dom'
+import { useI18n } from '../i18n'
+import LanguageToggle from './LanguageToggle'
+import Disclaimer from './Disclaimer'
+
+export default function Layout({ children }: { children: ReactNode }) {
+  const { t } = useI18n()
+  return (
+    <div className="app">
+      <header className="app-header">
+        <div className="brand">
+          <Link to="/" className="brand-title">
+            {t('app.title')}
+          </Link>
+          <span className="brand-sub">{t('app.subtitle')}</span>
+        </div>
+        <nav className="nav">
+          <Link to="/">{t('nav.home')}</Link>
+          <Link to="/knowledge">{t('nav.knowledge')}</Link>
+          <LanguageToggle />
+        </nav>
+      </header>
+      <main className="app-main">{children}</main>
+      <footer className="app-footer">
+        <Disclaimer />
+      </footer>
+    </div>
+  )
+}
