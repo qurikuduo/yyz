@@ -28,4 +28,4 @@ COPY --from=webbuild /app/web/dist ./web/dist
 COPY package.json ./
 EXPOSE 8080
 # node:sqlite is used for storage (zero native dependencies)
-CMD ["node", "server/src/index.js"]
+CMD ["node", "--disable-warning=ExperimentalWarning", "server/src/index.js"]
