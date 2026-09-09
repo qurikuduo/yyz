@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Build output
+web/dist/
+*.tsbuildinfo
+
+# SQLite data (mounted volume in Docker; local dev DB)
+/data/
+server/data/*
+!server/data/.gitkeep
+server/data/*.db
+server/data/*.db-*
+server/data/*.sqlite
+
+# Logs & env
+*.log
+.env
+.env.local
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

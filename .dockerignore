@@ -1,0 +1,12 @@
+**/node_modules
+web/dist
+data
+server/data/*.db
+server/data/*.db-*
+.git
+.gitignore
+*.log
+.DS_Store
+docs
+README.md
+plan*.md
