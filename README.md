@@ -31,7 +31,7 @@ contact local emergency services or a crisis line **immediately**.
 ## 技术栈 · Stack
 
 - 前端 Frontend：React 18 + Vite 5 + TypeScript + react-router
-- 后端 Backend：Node.js 20 + Express 4 + better-sqlite3
+- 后端 Backend：Node.js 24 + Express 4 + `node:sqlite`（内置，无原生依赖）
 - 交付 Delivery：单一 Docker 镜像（Express 同时托管 API 与前端静态资源）+ docker-compose
 
 ## 快速开始（Docker）· Quick start (Docker)
@@ -76,9 +76,9 @@ npm start                # Express 托管 API + 前端，http://localhost:8080
 ## 开发里程碑 · Milestones
 
 - [x] M0 脚手架（git、目录、最小可运行全栈、Docker 骨架）
-- [ ] M1 后端核心（DB + PHQ-9 + API + token/密码）
-- [ ] M2 前端核心（Home/Intake/Assessment/Result）
-- [ ] M3 全量表 + 综合诊断
+- [x] M1 后端核心（DB + PHQ-9 + API + token/密码）
+- [x] M2 前端核心（Home/Intake/Assessment/Result）
+- [x] M3 全量表 + 综合诊断
 - [ ] M4 分享 URL + 密码查看 + 持久化 + 危机流程
 - [ ] M5 知识库与可下载资料
 - [ ] M6 交付打磨（镜像 + compose + 文档 + 端到端验证）

@@ -1,4 +1,5 @@
 import type {
+  ComprehensiveBattery,
   Intake,
   Lang,
   ScaleDef,
@@ -24,11 +25,17 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export function fetchScales() {
-  return request<{ scales: ScaleSummary[] }>('/scales')
+  return request<{ scales: ScaleSummary[]; comprehensive: ComprehensiveBattery }>('/scales')
 }
 
 export function fetchScale(id: string) {
   return request<ScaleDef>(`/scales/${encodeURIComponent(id)}`)
+}
+
+export function fetchComprehensiveBattery() {
+  return request<{ comprehensive: ComprehensiveBattery; scales: ScaleDef[] }>(
+    '/scales/comprehensive/battery'
+  )
 }
 
 export interface SubmitPayload {

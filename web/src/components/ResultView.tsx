@@ -7,6 +7,9 @@ import CrisisBanner from './CrisisBanner'
 const severityColor: Record<string, string> = {
   minimal: '#3a7d44',
   mild: '#6a994e',
+  positive: '#c9a227',
+  subthreshold: '#6a994e',
+  symptomatic: '#b42318',
   moderate: '#c9a227',
   'moderately-severe': '#d97706',
   severe: '#b42318',
@@ -16,11 +19,13 @@ const severityColor: Record<string, string> = {
 export default function ResultView({
   result,
   token,
-  createdAt
+  createdAt,
+  embedded = false
 }: {
   result: AssessmentResult
   token?: string
   createdAt?: string
+  embedded?: boolean
 }) {
   const { t, pick, pickList } = useI18n()
   const [copied, setCopied] = useState(false)
@@ -42,21 +47,29 @@ export default function ResultView({
 
   return (
     <div className="result">
-      {result.crisis && <CrisisBanner />}
+      {result.crisis && !embedded && <CrisisBanner />}
 
       <div className="result-scorecard" style={{ borderTopColor: color }}>
         <div className="score-big" style={{ color }}>
-          {result.total}
-          <span className="score-max">/ {result.maxTotal}</span>
+          {result.derived ? result.derived.value : result.total}
+          <span className="score-max">/ {result.derived ? result.derived.range[1] : result.maxTotal}</span>
         </div>
         <div className="score-meta">
           <div className="severity-pill" style={{ background: color }}>
             {pick(result.severityLabel)}
           </div>
-          <div className="muted">{t('result.severityPct', { pct })}</div>
+          {result.derived ? (
+            <div className="muted">
+              {t('result.rawScore')} {result.total}/{result.maxTotal} · {pick(result.derived.label)}{' '}
+              {result.derived.value}
+            </div>
+          ) : (
+            <div className="muted">{t('result.severityPct', { pct })}</div>
+          )}
           {result.clinicalCutoff != null && (
             <div className="muted">
-              {t('result.cutoff')} {result.clinicalCutoff} ·{' '}
+              {t('result.cutoff')} {result.clinicalCutoff}
+              {result.derived ? ` (${pick(result.derived.label)})` : ''} ·{' '}
               {result.aboveCutoff ? t('result.above') : t('result.below')}
             </div>
           )}
@@ -65,6 +78,37 @@ export default function ResultView({
           <div className="gauge-fill" style={{ width: `${pct}%`, background: color }} />
         </div>
       </div>
+
+      {result.determination && (
+        <section className="block determination">
+          <h2>{t('result.determination')}</h2>
+          <p className="determination-headline" style={{ color }}>
+            {result.determination.label ? pick(result.determination.label) : ''}
+          </p>
+          <ul className="determination-meta">
+            <li>
+              {t('result.symptomCount')}: {result.determination.count}/{result.determination.threshold === 5 ? 9 : result.maxTotal}{' '}
+              <span className="muted">({t('result.threshold')} ≥{result.determination.threshold})</span>
+            </li>
+            <li>
+              {t('result.coreSymptom')}: {result.determination.coreMet ? t('common.yes') : t('common.no')}
+            </li>
+            <li>
+              {t('result.additionalCriteria')}: {result.determination.gatesMet ? t('result.allSatisfied') : t('result.notAllSatisfied')}
+            </li>
+          </ul>
+          {result.determination.gates.length > 0 && (
+            <ul className="gate-list">
+              {result.determination.gates.map((g) => (
+                <li key={g.itemId} className={g.satisfied ? 'gate-ok' : 'gate-no'}>
+                  <span className="gate-mark">{g.satisfied ? '✓' : '✕'}</span>
+                  {pick(g.text)}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
 
       <section className="block">
         <h2>{t('result.summary')}</h2>
@@ -105,7 +149,7 @@ export default function ResultView({
         <h2>{t('result.itemReview')}</h2>
         <div className="item-list">
           {result.items.map((item) => (
-            <article key={item.itemId} className={`item-card ${item.notable ? 'notable' : ''} ${item.crisisEndorsed ? 'crisis-item' : ''}`}>
+            <article key={item.itemId} className={`item-card ${item.notable ? 'notable' : ''} ${item.crisisEndorsed ? 'crisis-item' : ''} ${item.kind === 'gate' ? 'gate-item' : ''}`}>
               <header className="item-head">
                 <span className="item-index">{item.index}</span>
                 <span className="item-text">{pick(item.text)}</span>
@@ -113,13 +157,27 @@ export default function ResultView({
               <div className="item-tags">
                 <span className="tag">{t('result.whatItMeasures')}: {pick(item.domain)}</span>
                 {item.dsm5 && <span className="tag">DSM-5 {item.dsm5}</span>}
+                {item.reverse && <span className="tag">{t('result.reverseScored')}</span>}
+                {item.kind === 'gate' && (
+                  <span className={`tag ${item.gateSatisfied ? 'ok' : 'warn'}`}>
+                    {item.gateSatisfied ? t('result.gateSatisfied') : t('result.gateNotSatisfied')}
+                  </span>
+                )}
                 {item.notable && <span className="tag warn">{t('result.notable')}</span>}
                 {item.crisisEndorsed && <span className="tag danger">!</span>}
               </div>
               <div className="item-answer">
                 <strong>{t('result.yourAnswer')}:</strong>{' '}
-                {item.selectedLabel ? pick(item.selectedLabel) : '—'}{' '}
-                <span className="muted">({t('result.scoreContrib')} {item.scoreContribution})</span>
+                {item.selectedLabel ? pick(item.selectedLabel) : '—'}
+                {item.kind !== 'gate' && (
+                  <>
+                    {' '}
+                    <span className="muted">
+                      ({t('result.scoreContrib')} {item.scoreContribution}
+                      {item.reverse ? `, ${t('result.afterReverse')}` : ''})
+                    </span>
+                  </>
+                )}
               </div>
               <div className="item-explain">
                 <strong>{t('result.whyItMatters')}:</strong> {pick(item.explanation)}
@@ -134,14 +192,16 @@ export default function ResultView({
         </div>
       </section>
 
-      <div className="actions">
-        <Link className="btn primary" to="/">
-          {t('result.retake')}
-        </Link>
-        <Link className="btn ghost" to="/knowledge">
-          {t('result.knowledge')}
-        </Link>
-      </div>
+      {!embedded && (
+        <div className="actions">
+          <Link className="btn primary" to="/">
+            {t('result.retake')}
+          </Link>
+          <Link className="btn ghost" to="/knowledge">
+            {t('result.knowledge')}
+          </Link>
+        </div>
+      )}
     </div>
   )
 }

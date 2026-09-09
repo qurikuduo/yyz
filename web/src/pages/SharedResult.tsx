@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { fetchAssessmentMeta, unlockAssessment } from '../api/client'
 import { useI18n } from '../i18n'
 import ResultView from '../components/ResultView'
+import ComprehensiveView from '../components/ComprehensiveView'
 import type { UnlockResponse } from '../types'
 
 type Status = 'loading' | 'locked' | 'unlocked' | 'notfound'
@@ -62,7 +63,15 @@ export default function SharedResult() {
     return (
       <section>
         <h1>{t('shared.heading')}</h1>
-        <ResultView result={data.result} createdAt={data.createdAt} />
+        {data.comprehensive && data.results ? (
+          <ComprehensiveView
+            comprehensive={data.comprehensive}
+            results={data.results}
+            createdAt={data.createdAt}
+          />
+        ) : (
+          data.result && <ResultView result={data.result} createdAt={data.createdAt} />
+        )}
       </section>
     )
   }

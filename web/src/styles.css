@@ -518,6 +518,147 @@ a {
   margin: 0;
 }
 
+/* M3: featured comprehensive card, per-item domain, determination, gates,
+   comprehensive scale grid + accordion */
+.badge.featured {
+  background: var(--primary);
+  color: #fff;
+}
+.scale-card.featured {
+  border-color: #bfe0cf;
+  background: linear-gradient(180deg, #f3faf6 0%, #ffffff 60%);
+}
+.q-domain {
+  margin: -4px 0 12px;
+  font-size: 0.82rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+.tag.ok {
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+}
+
+.section-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 6px 0 14px;
+  padding: 10px 14px;
+  background: var(--primary-soft);
+  border-radius: 10px;
+  font-size: 0.85rem;
+}
+.section-name {
+  font-weight: 700;
+  color: var(--primary-dark);
+}
+
+.determination-headline {
+  font-weight: 700;
+  font-size: 1.05rem;
+  margin: 4px 0 10px;
+}
+.determination-meta {
+  margin: 0 0 12px;
+  padding-left: 20px;
+}
+.determination-meta li {
+  margin-bottom: 3px;
+}
+.gate-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.gate-list li {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  font-size: 0.9rem;
+  padding: 6px 10px;
+  border-radius: 8px;
+}
+.gate-ok {
+  background: var(--primary-soft);
+}
+.gate-no {
+  background: var(--warn-soft);
+}
+.gate-mark {
+  font-weight: 700;
+}
+.gate-ok .gate-mark { color: var(--primary-dark); }
+.gate-no .gate-mark { color: var(--warn); }
+.item-card.gate-item {
+  border-left-color: #cfe3d8;
+}
+
+.scale-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+.scale-chip {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--muted);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.scale-chip-name {
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+.scale-chip-score {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 2px 0;
+}
+.scale-chip-sev {
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.accordion-item {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.accordion-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 14px;
+  background: #fafbfc;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+  color: inherit;
+}
+.accordion-head:hover {
+  background: var(--primary-soft);
+}
+.accordion-caret {
+  font-weight: 700;
+  color: var(--primary);
+}
+.accordion-body {
+  padding: 14px;
+  border-top: 1px solid var(--border);
+}
+
 @media (max-width: 560px) {
   .app-main {
     padding: 20px 16px;

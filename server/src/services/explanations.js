@@ -1,7 +1,9 @@
 // Builds the full, bilingual result payload: per-item explanation + answer analysis,
 // severity summary, personalized advice, and the evidence/basis for the judgement.
+// Handles sum scales (incl. reverse scoring + SDS derived standard score) and the
+// DSM-5 criteria module (symptom count + gating determination).
 
-const POSITIVE_THRESHOLD = 2 // "more than half the days" or higher = clinically notable per item
+const DEFAULT_NOTABLE_THRESHOLD = 2 // "more than half the days" or higher = clinically notable per item
 
 // Map intake enum codes to human-readable bilingual labels.
 const INTAKE_LABELS = {
@@ -46,28 +48,73 @@ function labelOf(field, value, lang) {
   return String(value)
 }
 
+// DSM-5 determination level → bilingual headline.
+const DETERMINATION_LABELS = {
+  meets: {
+    zh: '符合重性抑郁发作的症状标准',
+    en: 'Meets symptom criteria for a major depressive episode'
+  },
+  'symptoms-met-gates-incomplete': {
+    zh: '症状数达标，但病程/功能损害/排除等标准尚未全部满足',
+    en: 'Symptom count met, but duration/impairment/exclusion criteria are not all satisfied'
+  },
+  subthreshold: {
+    zh: '阈下抑郁症状（未达完整发作标准）',
+    en: 'Subthreshold depressive symptoms (below full-episode criteria)'
+  },
+  'not-met': {
+    zh: '未达到抑郁发作的症状标准',
+    en: 'Does not meet symptom criteria for a depressive episode'
+  }
+}
+
+function itemBounds(scale, item) {
+  if (item.options && item.options.length) {
+    const vs = item.options.map((o) => o.value)
+    return [Math.min(...vs), Math.max(...vs)]
+  }
+  const min = scale.scoring.perItemMin ?? 0
+  const max = scale.scoring.perItemMax ?? 3
+  return [min, max]
+}
+
+function contribution(scale, item, value) {
+  if (!item.reverse) return value
+  const [min, max] = itemBounds(scale, item)
+  return min + max - value
+}
+
 export function buildResult(scale, score, intake = {}) {
   const valueMap = new Map(score.itemValues.map((v) => [v.itemId, v.value]))
-  const optionMap = new Map((scale.options || []).map((o) => [o.value, o]))
+  const scaleOptionMap = new Map((scale.options || []).map((o) => [o.value, o]))
+  const notableThreshold = scale.notableThreshold ?? DEFAULT_NOTABLE_THRESHOLD
 
   const items = scale.items.map((item, index) => {
     const value = valueMap.get(item.id) ?? 0
+    const optionMap = item.options && item.options.length
+      ? new Map(item.options.map((o) => [o.value, o]))
+      : scaleOptionMap
     const option = optionMap.get(value)
     const crisisEndorsed = Boolean(item.crisis) && value >= 1
+    const isGate = item.kind === 'gate'
+    const notable = !isGate && value >= notableThreshold
     return {
       itemId: item.id,
       index: index + 1,
       text: item.text,
       domain: item.domain,
       dsm5: item.dsm5 ?? null,
+      kind: item.kind ?? 'item',
+      reverse: Boolean(item.reverse),
       explanation: item.explanation,
       selectedValue: value,
       selectedLabel: option ? option.label : null,
       selectedMeaning: option ? option.meaning : null,
-      scoreContribution: value,
+      scoreContribution: isGate ? value : contribution(scale, item, value),
       isCrisisItem: Boolean(item.crisis),
       crisisEndorsed,
-      notable: value >= POSITIVE_THRESHOLD
+      gateSatisfied: isGate ? value >= 1 : null,
+      notable
     }
   })
 
@@ -87,14 +134,22 @@ export function buildResult(scale, score, intake = {}) {
   return {
     scheme: scale.id,
     schemeName: scale.name,
+    scoringType: score.scoringType,
     total: score.total,
     maxTotal: score.maxTotal,
     minTotal: score.minTotal,
+    derived: score.derived ?? null,
     normalized: score.normalized,
     severity: score.severity,
     severityLabel: score.severityLabel,
     clinicalCutoff: score.clinicalCutoff,
     aboveCutoff: score.aboveCutoff,
+    determination: score.determination
+      ? {
+          ...score.determination,
+          label: DETERMINATION_LABELS[score.determination.level] || null
+        }
+      : null,
     crisis: score.crisis,
     advice,
     summary,
@@ -108,16 +163,48 @@ function severityPct(score) {
   return Math.round(score.normalized * 100)
 }
 
+function scoreDisplay(score, lang) {
+  // SDS shows the derived standard score alongside the raw score.
+  if (score.derived) {
+    return lang === 'zh'
+      ? `粗分 ${score.total}（标准分 ${score.derived.value}）`
+      : `raw ${score.total} (standard score ${score.derived.value})`
+  }
+  return `${score.total}`
+}
+
 function buildSummaryZh(scale, score, notableItems, advice) {
   const name = scale.shortName?.zh || scale.name.zh
-  let s = `你的 ${name} 总分为 ${score.total} / ${score.maxTotal}（严重度约 ${severityPct(score)}%），落在「${score.severityLabel.zh}」范围。`
+
+  if (score.scoringType === 'criteria') {
+    const det = score.determination
+    const label = DETERMINATION_LABELS[det.level]?.zh || ''
+    let s = `${name} 评估：9 项症状标准中有 ${det.count} 项在过去两周内达到「几乎每天」级别，${label}。`
+    s += det.coreMet
+      ? ' 核心症状（心境低落或兴趣/愉悦缺失）至少具备其一。'
+      : ' 但缺少核心症状（心境低落或兴趣/愉悦缺失），这是诊断的必要条件之一。'
+    if (det.gates && det.gates.length) {
+      const unsatisfied = det.gates.filter((g) => !g.satisfied)
+      s += unsatisfied.length
+        ? ` 有 ${unsatisfied.length} 项附加标准（病程/功能损害/排除等）未满足，需专业澄清。`
+        : ' 病程、功能损害及排除标准均已满足。'
+    }
+    if (score.crisis) {
+      s += ' 重要：你在与自杀意念相关的条目上为阳性，请务必优先查看下方的危机支持信息，并尽快联系专业人士或信任的人。'
+    }
+    if (advice?.zh) s += ` ${advice.zh}`
+    return s
+  }
+
+  let s = `你的 ${name} 得分为 ${scoreDisplay(score, 'zh')}，满分 ${score.maxTotal}（严重度约 ${severityPct(score)}%），落在「${score.severityLabel.zh}」范围。`
   if (typeof score.clinicalCutoff === 'number') {
+    const cutoffValue = score.derived ? `${score.clinicalCutoff}（标准分）` : `${score.clinicalCutoff}`
     s += score.aboveCutoff
-      ? ` 总分已达到临床参考切点（≥${score.clinicalCutoff}），提示可能存在具有临床意义的抑郁症状。`
-      : ` 总分低于临床参考切点（${score.clinicalCutoff}），当前未提示明显的临床抑郁水平。`
+      ? ` 已达到临床参考切点（≥${cutoffValue}），提示可能存在具有临床意义的抑郁症状。`
+      : ` 低于临床参考切点（${cutoffValue}），当前未提示明显的临床抑郁水平。`
   }
   if (notableItems.length) {
-    s += ` 其中有 ${notableItems.length} 个条目达到「超过一半天数」及以上频率，为主要困扰来源。`
+    s += ` 其中有 ${notableItems.length} 个条目达到较高频率/强度，为主要困扰来源。`
   }
   if (score.crisis) {
     s += ' 重要：你在与自伤/自杀意念相关的条目上为阳性，请务必优先查看下方的危机支持信息，并尽快联系专业人士或信任的人。'
@@ -128,14 +215,36 @@ function buildSummaryZh(scale, score, notableItems, advice) {
 
 function buildSummaryEn(scale, score, notableItems, advice) {
   const name = scale.shortName?.en || scale.name.en
-  let s = `Your ${name} total score is ${score.total} / ${score.maxTotal} (~${severityPct(score)}% severity), which falls in the "${score.severityLabel.en}" range.`
+
+  if (score.scoringType === 'criteria') {
+    const det = score.determination
+    const label = DETERMINATION_LABELS[det.level]?.en || ''
+    let s = `${name}: ${det.count} of the 9 symptom criteria were present at the "nearly every day" level over the past two weeks — ${label}.`
+    s += det.coreMet
+      ? ' At least one core symptom (depressed mood or loss of interest/pleasure) is present.'
+      : ' However, no core symptom (depressed mood or loss of interest/pleasure) is present, which is a necessary condition for diagnosis.'
+    if (det.gates && det.gates.length) {
+      const unsatisfied = det.gates.filter((g) => !g.satisfied)
+      s += unsatisfied.length
+        ? ` ${unsatisfied.length} additional criterion/criteria (duration/impairment/exclusion) are not satisfied and need professional clarification.`
+        : ' Duration, functional-impairment and exclusion criteria are all satisfied.'
+    }
+    if (score.crisis) {
+      s += ' Important: you endorsed the item related to suicidal thoughts. Please prioritize the crisis-support information below and contact a professional or someone you trust as soon as possible.'
+    }
+    if (advice?.en) s += ` ${advice.en}`
+    return s
+  }
+
+  let s = `Your ${name} score is ${scoreDisplay(score, 'en')} out of ${score.maxTotal} (~${severityPct(score)}% severity), which falls in the "${score.severityLabel.en}" range.`
   if (typeof score.clinicalCutoff === 'number') {
+    const cutoffValue = score.derived ? `${score.clinicalCutoff} (standard score)` : `${score.clinicalCutoff}`
     s += score.aboveCutoff
-      ? ` The score meets the clinical reference cutoff (>=${score.clinicalCutoff}), indicating possible clinically significant depressive symptoms.`
-      : ` The score is below the clinical reference cutoff (${score.clinicalCutoff}), not indicating a clinically significant depression level at this time.`
+      ? ` It meets the clinical reference cutoff (>=${cutoffValue}), indicating possible clinically significant depressive symptoms.`
+      : ` It is below the clinical reference cutoff (${cutoffValue}), not indicating a clinically significant depression level at this time.`
   }
   if (notableItems.length) {
-    s += ` ${notableItems.length} item(s) reached "more than half the days" or higher and are the main sources of distress.`
+    s += ` ${notableItems.length} item(s) reached a higher frequency/intensity and are the main sources of distress.`
   }
   if (score.crisis) {
     s += ' Important: you endorsed the item related to self-harm/suicidal thoughts. Please prioritize the crisis-support information below and contact a professional or someone you trust as soon as possible.'
@@ -146,10 +255,41 @@ function buildSummaryEn(scale, score, notableItems, advice) {
 
 function buildBasisZh(scale, score, items, notableItems, intake) {
   const basis = []
-  basis.push(`计分方式：${scale.name.zh}，各条目得分相加，总分范围 ${score.minTotal}–${score.maxTotal}。`)
-  basis.push(`本次总分 ${score.total}，依据标准切点判定为「${score.severityLabel.zh}」。`)
+
+  if (score.scoringType === 'criteria') {
+    const det = score.determination
+    basis.push(`计分方式：${scale.name.zh}，统计在过去两周内达到「几乎每天」的症状条目数（0–9）。`)
+    basis.push(`本次症状数 ${det.count} / ${score.maxTotal}，诊断阈值为 ≥${det.threshold} 项且至少含一项核心症状。`)
+    basis.push(`核心症状（A1 心境低落 / A2 兴趣缺失）：${det.coreMet ? '至少具备其一' : '均不具备'}。`)
+    if (det.gates && det.gates.length) {
+      basis.push(
+        `附加标准：${det.gates.map((g) => `${g.text.zh}=${g.satisfied ? '满足' : '未满足'}`).join('；')}。`
+      )
+    }
+    basis.push(`结构化判定：${DETERMINATION_LABELS[det.level]?.zh}。`)
+    basis.push(
+      score.crisis
+        ? '安全性：自杀意念条目（A9）为阳性，已触发危机提示，此为最高优先级关注点。'
+        : '安全性：自杀意念条目（A9）为阴性。'
+    )
+    const ctx = intakeContextZh(intake)
+    if (ctx) basis.push(`个人背景（供解读参考，不改变标准）：${ctx}。`)
+    basis.push('性质说明：本模块为 DSM-5 症状自评，非临床诊断；正式诊断需由合格专业人员面评作出。')
+    basis.push(`标准出处：${scale.reference}`)
+    return basis
+  }
+
+  if (score.derived) {
+    basis.push(
+      `计分方式：${scale.name.zh}，20 题各 1–4 分（含反向计分题），粗分范围 ${score.minTotal}–${score.maxTotal}；标准分 = 粗分 × ${scale.scoring.derived.factor}。`
+    )
+    basis.push(`本次粗分 ${score.total}，标准分 ${score.derived.value}，依据标准分切点判定为「${score.severityLabel.zh}」。`)
+  } else {
+    basis.push(`计分方式：${scale.name.zh}，各条目得分相加${items.some((i) => i.reverse) ? '（含反向计分题）' : ''}，总分范围 ${score.minTotal}–${score.maxTotal}。`)
+    basis.push(`本次总分 ${score.total}，依据标准切点判定为「${score.severityLabel.zh}」。`)
+  }
   if (typeof score.clinicalCutoff === 'number') {
-    basis.push(`临床参考切点为 ${score.clinicalCutoff}：${score.aboveCutoff ? '已达到，提示需专业关注' : '未达到'}。`)
+    basis.push(`临床参考切点为 ${score.clinicalCutoff}${score.derived ? '（标准分）' : ''}：${score.aboveCutoff ? '已达到，提示需专业关注' : '未达到'}。`)
   }
   const core = items.filter((i) => i.dsm5 === 'A1' || i.dsm5 === 'A2')
   const corePositive = core.filter((i) => i.notable)
@@ -159,7 +299,7 @@ function buildBasisZh(scale, score, items, notableItems, intake) {
     )
   }
   if (notableItems.length) {
-    basis.push(`达到阳性频率的条目：${notableItems.map((i) => i.domain.zh).join('、')}。`)
+    basis.push(`达到较高频率/强度的条目：${notableItems.map((i) => i.domain.zh).join('、')}。`)
   }
   basis.push(
     score.crisis
@@ -175,10 +315,41 @@ function buildBasisZh(scale, score, items, notableItems, intake) {
 
 function buildBasisEn(scale, score, items, notableItems, intake) {
   const basis = []
-  basis.push(`Scoring: ${scale.name.en}; item scores are summed, total range ${score.minTotal}-${score.maxTotal}.`)
-  basis.push(`Total score ${score.total}, classified as "${score.severityLabel.en}" per standard cutoffs.`)
+
+  if (score.scoringType === 'criteria') {
+    const det = score.determination
+    basis.push(`Scoring: ${scale.name.en}; counts symptom criteria present at the "nearly every day" level over the past two weeks (0-9).`)
+    basis.push(`This assessment: ${det.count} / ${score.maxTotal} symptoms; the diagnostic threshold is >=${det.threshold} plus at least one core symptom.`)
+    basis.push(`Core symptoms (A1 depressed mood / A2 anhedonia): ${det.coreMet ? 'at least one present' : 'none present'}.`)
+    if (det.gates && det.gates.length) {
+      basis.push(
+        `Additional criteria: ${det.gates.map((g) => `${g.text.en}=${g.satisfied ? 'satisfied' : 'not satisfied'}`).join('; ')}.`
+      )
+    }
+    basis.push(`Structured determination: ${DETERMINATION_LABELS[det.level]?.en}.`)
+    basis.push(
+      score.crisis
+        ? 'Safety: the suicidal-ideation criterion (A9) is positive, triggering crisis guidance — the highest-priority concern.'
+        : 'Safety: the suicidal-ideation criterion (A9) is negative.'
+    )
+    const ctx = intakeContextEn(intake)
+    if (ctx) basis.push(`Personal context (for interpretation only; criteria unchanged): ${ctx}.`)
+    basis.push('Nature: this DSM-5 symptom self-check is not a clinical diagnosis; a formal diagnosis requires in-person evaluation by a qualified professional.')
+    basis.push(`Source: ${scale.reference}`)
+    return basis
+  }
+
+  if (score.derived) {
+    basis.push(
+      `Scoring: ${scale.name.en}; 20 items scored 1-4 (some reverse-scored), raw range ${score.minTotal}-${score.maxTotal}; standard score = raw x ${scale.scoring.derived.factor}.`
+    )
+    basis.push(`This assessment: raw ${score.total}, standard score ${score.derived.value}, classified as "${score.severityLabel.en}" per standard-score cutoffs.`)
+  } else {
+    basis.push(`Scoring: ${scale.name.en}; item scores are summed${items.some((i) => i.reverse) ? ' (some reverse-scored)' : ''}, total range ${score.minTotal}-${score.maxTotal}.`)
+    basis.push(`Total score ${score.total}, classified as "${score.severityLabel.en}" per standard cutoffs.`)
+  }
   if (typeof score.clinicalCutoff === 'number') {
-    basis.push(`Clinical reference cutoff ${score.clinicalCutoff}: ${score.aboveCutoff ? 'reached, indicating need for professional attention' : 'not reached'}.`)
+    basis.push(`Clinical reference cutoff ${score.clinicalCutoff}${score.derived ? ' (standard score)' : ''}: ${score.aboveCutoff ? 'reached, indicating need for professional attention' : 'not reached'}.`)
   }
   const core = items.filter((i) => i.dsm5 === 'A1' || i.dsm5 === 'A2')
   const corePositive = core.filter((i) => i.notable)
@@ -188,7 +359,7 @@ function buildBasisEn(scale, score, items, notableItems, intake) {
     )
   }
   if (notableItems.length) {
-    basis.push(`Items at positive frequency: ${notableItems.map((i) => i.domain.en).join(', ')}.`)
+    basis.push(`Items at higher frequency/intensity: ${notableItems.map((i) => i.domain.en).join(', ')}.`)
   }
   basis.push(
     score.crisis

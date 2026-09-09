@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useI18n } from '../i18n'
 import ResultView from '../components/ResultView'
+import ComprehensiveView from '../components/ComprehensiveView'
 import type { SubmitResponse } from '../types'
 
 export default function Result() {
@@ -20,10 +21,23 @@ export default function Result() {
     )
   }
 
+  if (response.comprehensive && response.results) {
+    return (
+      <section>
+        <h1>{t('result.heading')}</h1>
+        <ComprehensiveView
+          comprehensive={response.comprehensive}
+          results={response.results}
+          token={response.token}
+        />
+      </section>
+    )
+  }
+
   return (
     <section>
       <h1>{t('result.heading')}</h1>
-      <ResultView result={response.result} token={response.token} />
+      {response.result && <ResultView result={response.result} token={response.token} />}
     </section>
   )
 }

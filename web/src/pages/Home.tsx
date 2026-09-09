@@ -2,19 +2,24 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { fetchScales } from '../api/client'
 import { useI18n } from '../i18n'
-import type { ScaleSummary } from '../types'
+import type { ComprehensiveBattery, ScaleSummary } from '../types'
 
 export default function Home() {
   const { t, pick } = useI18n()
   const navigate = useNavigate()
   const [scales, setScales] = useState<ScaleSummary[]>([])
+  const [comprehensive, setComprehensive] = useState<ComprehensiveBattery | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     let alive = true
     fetchScales()
-      .then((r) => alive && setScales(r.scales))
+      .then((r) => {
+        if (!alive) return
+        setScales(r.scales)
+        setComprehensive(r.comprehensive)
+      })
       .catch((e) => alive && setError(e.message))
       .finally(() => alive && setLoading(false))
     return () => {
@@ -47,13 +52,20 @@ export default function Home() {
           </button>
         ))}
 
-        <div className="scale-card disabled" aria-disabled="true">
-          <div className="scale-card-head">
-            <span className="scale-name">{t('home.comprehensive')}</span>
-            <span className="badge soon">{t('home.comSoon')}</span>
-          </div>
-          <p className="scale-desc">{t('home.comSoon')}</p>
-        </div>
+        {comprehensive && (
+          <button
+            type="button"
+            className="scale-card featured"
+            onClick={() => navigate('/intake/comprehensive')}
+          >
+            <div className="scale-card-head">
+              <span className="scale-name">{pick(comprehensive.name)}</span>
+              <span className="badge featured">{t('home.recommended')}</span>
+            </div>
+            <p className="scale-desc">{pick(comprehensive.description)}</p>
+            <span className="scale-start">{t('home.start')} →</span>
+          </button>
+        )}
       </div>
     </section>
   )

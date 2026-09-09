@@ -1,18 +1,23 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import { fetchScale, submitAssessment } from '../api/client'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { fetchComprehensiveBattery, submitAssessment } from '../api/client'
 import { useI18n } from '../i18n'
-import type { Intake, ScaleDef } from '../types'
+import type { Intake, ScaleDef, ScaleItem } from '../types'
 
-export default function Assessment() {
-  const { schemeId = '' } = useParams()
+interface FlatItem {
+  scale: ScaleDef
+  item: ScaleItem
+  order: number
+}
+
+export default function ComprehensiveAssessment() {
   const navigate = useNavigate()
   const location = useLocation()
   const { t, pick, lang } = useI18n()
 
   const intake = (location.state?.intake ?? {}) as Intake
 
-  const [scale, setScale] = useState<ScaleDef | null>(null)
+  const [battery, setBattery] = useState<ScaleDef[] | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [answers, setAnswers] = useState<Record<string, number>>({})
   const [current, setCurrent] = useState(0)
@@ -24,37 +29,42 @@ export default function Assessment() {
 
   useEffect(() => {
     let alive = true
-    fetchScale(schemeId)
-      .then((s) => alive && setScale(s))
+    fetchComprehensiveBattery()
+      .then((r) => alive && setBattery(r.scales))
       .catch((e) => alive && setLoadError(e.message))
     return () => {
       alive = false
     }
-  }, [schemeId])
+  }, [])
 
-  const items = scale?.items ?? []
+  const flat: FlatItem[] = useMemo(() => {
+    if (!battery) return []
+    const out: FlatItem[] = []
+    for (const scale of battery) {
+      for (const item of scale.items) out.push({ scale, item, order: out.length })
+    }
+    return out
+  }, [battery])
+
   const answeredCount = useMemo(
-    () => items.filter((it) => answers[it.id] !== undefined).length,
-    [items, answers]
+    () => flat.filter((f) => answers[f.item.id] !== undefined).length,
+    [flat, answers]
   )
-  const allAnswered = answeredCount === items.length && items.length > 0
+  const allAnswered = answeredCount === flat.length && flat.length > 0
 
   if (loadError) return <p className="error">{t('common.error')}: {loadError}</p>
-  if (!scale) return <p className="muted">{t('common.loading')}</p>
+  if (!battery) return <p className="muted">{t('common.loading')}</p>
 
-  const choose = (itemId: string, value: number) => {
+  const choose = (itemId: string, value: number) =>
     setAnswers((a) => ({ ...a, [itemId]: value }))
-  }
-
   const goNext = () => {
-    if (current < items.length - 1) setCurrent((c) => c + 1)
+    if (current < flat.length - 1) setCurrent((c) => c + 1)
     else if (allAnswered) setStage('password')
   }
   const goPrev = () => setCurrent((c) => Math.max(0, c - 1))
-
   const finishToPassword = () => {
     if (allAnswered) {
-      setCurrent(items.length - 1)
+      setCurrent(flat.length - 1)
       setStage('password')
     }
   }
@@ -66,10 +76,10 @@ export default function Assessment() {
     setSubmitting(true)
     try {
       const resp = await submitAssessment({
-        scheme: schemeId,
+        scheme: 'comprehensive',
         language: lang,
         intake,
-        answers: items.map((it) => ({ itemId: it.id, value: answers[it.id] })),
+        answers: flat.map((f) => ({ itemId: f.item.id, value: answers[f.item.id] })),
         password
       })
       navigate('/result', { state: { response: resp } })
@@ -107,41 +117,47 @@ export default function Assessment() {
     )
   }
 
-  const item = items[current]
-  const pct = items.length ? Math.round((answeredCount / items.length) * 100) : 0
-  const itemOptions = item.options ?? scale.options ?? []
+  const cur = flat[current]
+  const pct = flat.length ? Math.round((answeredCount / flat.length) * 100) : 0
+  const itemOptions = cur.item.options ?? cur.scale.options ?? []
+  const isNewSection = current === 0 || flat[current - 1].scale.id !== cur.scale.id
 
   return (
     <section>
       <div className="assess-head">
-        <h1>{pick(scale.name)}</h1>
-        <p className="muted">
-          {t('assessment.timeframe')}: {pick(scale.timeframe)}
-        </p>
+        <h1>{t('comprehensive.title')}</h1>
+        <p className="muted">{t('comprehensive.progressNote')}</p>
       </div>
 
-      <div className="progress-wrap" aria-hidden="false">
+      <div className="progress-wrap">
         <div className="progress-bar" style={{ width: `${pct}%` }} />
       </div>
       <div className="progress-meta">
-        <span>{t('assessment.question', { i: current + 1, n: items.length })}</span>
+        <span>{t('assessment.question', { i: current + 1, n: flat.length })}</span>
         <span className="muted">
-          {t('assessment.answered')} {answeredCount}/{items.length}
+          {t('assessment.answered')} {answeredCount}/{flat.length}
         </span>
       </div>
 
+      {isNewSection && (
+        <div className="section-banner">
+          <span className="section-name">{pick(cur.scale.shortName)}</span>
+          <span className="muted">{pick(cur.scale.timeframe)}</span>
+        </div>
+      )}
+
       <div className="question-card">
-        <p className="q-text">{pick(item.text)}</p>
-        {item.domain && <p className="q-domain">{pick(item.domain)}</p>}
+        <p className="q-text">{pick(cur.item.text)}</p>
+        {cur.item.domain && <p className="q-domain">{pick(cur.item.domain)}</p>}
         <div className="options">
           {itemOptions.map((opt) => {
-            const selected = answers[item.id] === opt.value
+            const selected = answers[cur.item.id] === opt.value
             return (
               <button
                 key={opt.value}
                 type="button"
                 className={`option ${selected ? 'selected' : ''}`}
-                onClick={() => choose(item.id, opt.value)}
+                onClick={() => choose(cur.item.id, opt.value)}
                 aria-pressed={selected}
               >
                 <span className="option-radio" aria-hidden="true" />
@@ -156,8 +172,8 @@ export default function Assessment() {
         <button type="button" className="btn ghost" onClick={goPrev} disabled={current === 0}>
           {t('assessment.prev')}
         </button>
-        {current < items.length - 1 ? (
-          <button type="button" className="btn primary" onClick={goNext} disabled={answers[item.id] === undefined}>
+        {current < flat.length - 1 ? (
+          <button type="button" className="btn primary" onClick={goNext} disabled={answers[cur.item.id] === undefined}>
             {t('assessment.next')}
           </button>
         ) : (

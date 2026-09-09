@@ -178,6 +178,8 @@ export const phq9 = {
     }
   },
   reference: 'Kroenke K, Spitzer RL, Williams JB. The PHQ-9: validity of a brief depression severity measure. J Gen Intern Med. 2001;16(9):606-613.',
+  weight: 0.86,
+  notableThreshold: 2,
   scoring: {
     type: 'sum',
     perItemMin: 0,
