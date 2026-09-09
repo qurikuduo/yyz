@@ -129,7 +129,12 @@ const zh: Dict = {
   'shared.wrongPassword': '密码不正确，请重试。',
   'shared.createdAt': '测评时间',
   'knowledge.heading': '自助知识库',
-  'knowledge.soon': '知识库将在 M5 里程碑开放。',
+  'knowledge.intro':
+    '以下为循证的抑郁自助资料与权威来源。可下载的工作表（Markdown）可打印或保存使用；外部链接指向 WHO、NIMH、NHS、MSD、Mayo Clinic 等权威机构。',
+  'knowledge.download': '下载',
+  'knowledge.open': '打开链接',
+  'knowledge.disclaimer':
+    '这些资料用于自我教育与辅助，不能替代专业的评估、诊断或治疗。如处于危机中，请立即联系当地急救或心理危机热线。',
   'common.loading': '加载中…',
   'common.error': '出错了',
   'common.back': '返回',
@@ -268,7 +273,12 @@ const en: Dict = {
   'shared.wrongPassword': 'Incorrect password. Please try again.',
   'shared.createdAt': 'Assessment time',
   'knowledge.heading': 'Self-help knowledge base',
-  'knowledge.soon': 'The knowledge base arrives in milestone M5.',
+  'knowledge.intro':
+    'Evidence-based depression self-help materials and authoritative sources below. Downloadable worksheets (Markdown) can be printed or saved; external links point to WHO, NIMH, NHS, MSD, and Mayo Clinic.',
+  'knowledge.download': 'Download',
+  'knowledge.open': 'Open link',
+  'knowledge.disclaimer':
+    'These materials are for self-education and support and do not replace professional assessment, diagnosis, or treatment. If you are in crisis, contact local emergency services or a crisis line immediately.',
   'common.loading': 'Loading…',
   'common.error': 'Something went wrong',
   'common.back': 'Back',

@@ -1,6 +1,7 @@
 import type {
   ComprehensiveBattery,
   Intake,
+  KnowledgeIndex,
   Lang,
   ScaleDef,
   ScaleSummary,
@@ -64,4 +65,12 @@ export function unlockAssessment(token: string, password: string) {
     method: 'POST',
     body: JSON.stringify({ password })
   })
+}
+
+export function fetchKnowledge() {
+  return request<KnowledgeIndex>('/knowledge')
+}
+
+export function knowledgeDownloadUrl(slug: string) {
+  return `${BASE}/knowledge/${encodeURIComponent(slug)}/download`
 }

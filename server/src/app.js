@@ -5,6 +5,7 @@ import fs from 'node:fs'
 import { WEB_DIST } from './config.js'
 import scalesRouter from './routes/scales.js'
 import assessmentsRouter from './routes/assessments.js'
+import knowledgeRouter from './routes/knowledge.js'
 
 export function createApp() {
   const app = express()
@@ -20,6 +21,7 @@ export function createApp() {
   // API routes
   app.use('/api/scales', scalesRouter)
   app.use('/api/assessments', assessmentsRouter)
+  app.use('/api/knowledge', knowledgeRouter)
 
   // Serve built frontend (production). SPA fallback for non-API routes.
   if (fs.existsSync(WEB_DIST) && fs.existsSync(path.join(WEB_DIST, 'index.html'))) {

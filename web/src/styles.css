@@ -670,3 +670,50 @@ a {
     font-size: 1.08rem;
   }
 }
+
+/* Buttons: small variant */
+.btn.sm {
+  padding: 7px 14px;
+  font-size: 0.86rem;
+  text-decoration: none;
+}
+
+/* Knowledge base */
+.knowledge-group {
+  margin-top: 26px;
+}
+.knowledge-cat {
+  font-size: 1.05rem;
+  margin-bottom: 12px;
+  color: var(--text);
+}
+.knowledge-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.knowledge-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+.knowledge-card .scale-desc {
+  flex: 1;
+}
+.knowledge-card-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+.disclaimer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  font-size: 0.85rem;
+}

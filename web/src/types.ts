@@ -221,3 +221,24 @@ export interface UnlockResponse {
   results: AssessmentResult[] | null
   comprehensive: ComprehensiveReport | null
 }
+
+export interface KnowledgeCategory {
+  id: string
+  order: number
+  name: Bilingual
+}
+
+export interface KnowledgeResource {
+  slug: string
+  category: string
+  title: Bilingual
+  summary: Bilingual
+  downloadable: boolean
+  externalUrl: string | null
+  order: number
+}
+
+export interface KnowledgeIndex {
+  categories: KnowledgeCategory[]
+  resources: KnowledgeResource[]
+}
