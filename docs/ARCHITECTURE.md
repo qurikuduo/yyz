@@ -8,13 +8,13 @@
                    ├── /api/*        REST API（量表、测评、知识库）
                    └── /*            静态前端（SPA fallback 到 index.html）
                           │
-                          └── better-sqlite3 ──> /app/data/app.db（容器卷）
+                          └── node:sqlite ──> /app/data/app.db（容器卷）
 ```
 
 ## 目录结构
 ```
 / (repo root)
-├── Dockerfile              多阶段：构建前端 → 装后端生产依赖 → node:20-slim 运行
+├── Dockerfile              多阶段：构建前端 → 装后端生产依赖 → node:24-slim 运行
 ├── docker-compose.yml      单服务 app，端口 8080，卷 ./data:/app/data
 ├── package.json            根脚本（install:all / dev:* / build / start）
 ├── docs/                   USAGE / SCALES / ARCHITECTURE / DISCLAIMER / DEPLOYMENT
@@ -23,8 +23,8 @@
 │   │   ├── index.js        启动入口
 │   │   ├── app.js          Express 应用装配（中间件、路由、静态托管）
 │   │   ├── config.js       端口/路径/DB 配置（环境变量可覆盖）
-│   │   ├── db.js           better-sqlite3 建表与迁移（M1）
-│   │   ├── routes/         scales / assessments / knowledge / meta
+│   │   ├── db.js           node:sqlite 建表与迁移（M1）
+│   │   ├── routes/         scales / assessments / knowledge
 │   │   ├── services/       scoring / comprehensive / explanations / token
 │   │   └── data/scales/    各量表双语题库 + 逐题解释
 │   ├── knowledge-assets/   随镜像打包的可下载自助资料
@@ -47,7 +47,7 @@
 
 ## 数据模型（M1 起）
 - `assessments`：id, token, password_hash, scheme, language, intake_json, answers_json, scores_json, comprehensive_json, created_at
-- `knowledge_resources`：id, slug, title_zh, title_en, category, summary, file_path, external_url
+- `knowledge_resources`：建表保留，但当前知识库采用**静态注册表**（`server/src/data/knowledge.js`）而非数据库表，便于随镜像版本化与审查。
 
 ## 环境变量
 | 变量 | 默认 | 说明 |

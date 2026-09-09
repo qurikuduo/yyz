@@ -43,6 +43,7 @@ docker run -d --name dst \
 | HOST | 0.0.0.0 | 监听地址 |
 | DATA_DIR | /app/data（容器） | SQLite 目录，务必挂载卷以持久化 |
 | DB_FILE | $DATA_DIR/app.db | 数据库文件路径 |
+| KNOWLEDGE_ASSETS | $SERVER_ROOT/knowledge-assets | 可下载自助资料目录（随镜像打包，一般无需修改） |
 
 修改端口示例（compose）：
 ```yaml

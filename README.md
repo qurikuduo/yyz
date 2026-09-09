@@ -81,4 +81,4 @@ npm start                # Express 托管 API + 前端，http://localhost:8080
 - [x] M3 全量表 + 综合诊断
 - [x] M4 分享 URL + 密码查看 + 持久化 + 危机流程
 - [x] M5 知识库与可下载资料
-- [ ] M6 交付打磨（镜像 + compose + 文档 + 端到端验证）
+- [x] M6 交付打磨（镜像 + compose + 文档 + 端到端验证）
