@@ -1,5 +1,7 @@
 # 抑郁自测 · Depression Self-Assessment
 
+[![CI](https://github.com/qurikuduo/yyz/actions/workflows/ci.yml/badge.svg)](https://github.com/qurikuduo/yyz/actions/workflows/ci.yml)
+
 > 循证抑郁自评 Web 应用 · Evidence-based depression self-assessment web app
 > 支持 PHQ-9 / PHQ-2、SDS(Zung)、CES-D、BDI-II、DSM-5 MDD，并可做综合评估。
 > Bilingual (中文 / English). 结果可通过密码保护的唯一 URL 分享。数据存于 SQLite（容器卷）。
@@ -39,6 +41,12 @@ contact local emergency services or a crisis line **immediately**.
 ```bash
 docker compose up --build
 # 打开 http://localhost:8080
+```
+
+不想本地构建？使用 GitHub Actions 自动发布的预构建镜像（详见 [DEPLOYMENT](docs/DEPLOYMENT.md)）：
+
+```bash
+docker compose -f docker-compose.prebuilt.yml up -d
 ```
 
 SQLite 数据持久化在宿主机 `./data/` 目录（容器内 `/app/data`）。

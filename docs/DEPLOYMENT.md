@@ -4,7 +4,7 @@
 - Docker 20.10+ 与 Docker Compose v2
 - 开放访问 `http://localhost:8080`（或自定义端口）
 
-## 使用 docker compose 部署（推荐）
+## 使用 docker compose 部署（本地构建）
 ```bash
 # 在仓库根目录
 docker compose up --build -d
@@ -13,6 +13,17 @@ docker compose up --build -d
 - 镜像：`depression-selftest:latest`
 - 端口：`8080:8080`
 - 数据卷：宿主机 `./data` → 容器 `/app/data`（SQLite 持久化）
+
+## 使用预构建镜像部署（无需本地构建）
+镜像由 GitHub Actions 在每次推送 `v*` 标签时自动构建并发布到 GHCR：
+```bash
+docker compose -f docker-compose.prebuilt.yml pull
+docker compose -f docker-compose.prebuilt.yml up -d
+```
+- 镜像地址：`ghcr.io/qurikuduo/yyz`，标签含 `latest`、`主版本.次版本`（如 `1.1`）与完整版本号（如 `1.1.0`）
+- 固定版本部署：将 `docker-compose.prebuilt.yml` 中的 `image:` 改为如 `ghcr.io/qurikuduo/yyz:1.1.0`
+- 若仓库/包为私有，需先 `docker login ghcr.io`
+- 注意：`docker-compose.prebuilt.yml` 与 `docker-compose.yml` 使用同一容器名与数据卷，二者二选一运行
 
 查看日志 / 状态：
 ```bash
@@ -65,3 +76,19 @@ curl http://localhost:8080/api/health
 - 本应用默认 HTTP 明文。若公网部署，请在反向代理（Nginx/Caddy/Traefik）后启用 HTTPS。
 - 分享 URL 的隐私依赖用户自设密码；建议提醒用户设置强密码。
 - BDI-II 版权限制见 `docs/DISCLAIMER.md`，商业部署前务必取得授权或移除该量表。
+
+## CI/CD（GitHub Actions）
+| Workflow | 触发 | 行为 |
+|---|---|---|
+| `.github/workflows/ci.yml` | push 到 `master` / PR | `npm ci` 构建前端（含 TS 类型检查）→ 构建 Docker 镜像（不推送）→ 启动容器冒烟测试 `/api/health` 与首页 |
+| `.github/workflows/release.yml` | 推送 `v*` 标签 | 构建镜像并推送到 GHCR（`latest` / `1.1` / `1.1.0` 式标签）→ 从 `CHANGELOG.md` 提取对应版本说明 + 自动生成变更列表，创建 GitHub Release |
+
+发布新版本流程：
+```bash
+# 1. 更新根 package.json 的 version 与 CHANGELOG.md
+git commit -m "vX.Y.Z: ..."
+git tag vX.Y.Z
+git push origin master vX.Y.Z
+```
+- 镜像构建使用 `NPM_REGISTRY=https://registry.npmjs.org`（CI 网络到官方源最快；如需可改）。
+- 首次发布后 GHCR 包默认私有；若需匿名拉取，在 GitHub 仓库 Packages 设置中把该包设为 Public。

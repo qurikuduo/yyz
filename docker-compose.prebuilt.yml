@@ -1,0 +1,23 @@
+# 使用 GHCR 预构建镜像（无需本地构建，与 docker-compose.yml 二选一）：
+#   docker compose -f docker-compose.prebuilt.yml pull
+#   docker compose -f docker-compose.prebuilt.yml up -d
+services:
+  app:
+    image: ghcr.io/qurikuduo/yyz:latest
+    container_name: depression-selftest
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - HOST=0.0.0.0
+      - DATA_DIR=/app/data
+    volumes:
+      # SQLite persists here; survives container rebuilds
+      - ./data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

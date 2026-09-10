@@ -3,6 +3,17 @@
 本项目的所有重要变更记录于此。版本遵循语义化版本（SemVer）。
 All notable changes to this project are documented here. Versions follow SemVer.
 
+## [Unreleased]
+
+### 新增 · Added
+- **CI/CD（GitHub Actions）**：
+  - `ci.yml`：push 到 master / PR 时自动编译前端（含 TS 类型检查）、构建 Docker 镜像并做容器冒烟测试。
+    CI workflow: frontend build (typecheck), Docker image build, container smoke test.
+  - `release.yml`：推送 `v*` 标签时自动构建镜像并推送到 GHCR（`latest` / `1.1` / `1.1.0` 式标签），并从 CHANGELOG 提取说明创建 GitHub Release。
+    Release workflow: on `v*` tags, build and push the image to GHCR and create a GitHub Release with notes extracted from the changelog.
+- `docker-compose.prebuilt.yml`：直接使用 GHCR 预构建镜像部署，无需本地构建。
+  Prebuilt-image compose file that deploys straight from GHCR without a local build.
+
 ## [v1.1.0] — 2026-09-10
 
 ### 新增 · Added

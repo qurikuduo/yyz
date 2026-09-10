@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Build frontend (typecheck + vite build)
+        run: |
+          npm --prefix web ci
+          npm --prefix web run build
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: depression-selftest:ci
+          build-args: |
+            NPM_REGISTRY=https://registry.npmjs.org
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke test container
+        run: |
+          docker run -d --name smoke -p 8080:8080 depression-selftest:ci
+          ok=0
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:8080/api/health >/dev/null 2>&1; then ok=1; break; fi
+            sleep 1
+          done
+          if [ "$ok" != "1" ]; then
+            echo "::error::container failed to become healthy"
+            docker logs smoke
+            exit 1
+          fi
+          curl -fsS http://localhost:8080/ | grep -q 'assets/index-' || {
+            echo "::error::frontend not served"; docker logs smoke; exit 1; }
+          docker rm -f smoke >/dev/null
