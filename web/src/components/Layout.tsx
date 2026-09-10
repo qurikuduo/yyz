@@ -10,10 +10,13 @@ export default function Layout({ children }: { children: ReactNode }) {
     <div className="app">
       <header className="app-header">
         <div className="brand">
-          <Link to="/" className="brand-title">
-            {t('app.title')}
-          </Link>
-          <span className="brand-sub">{t('app.subtitle')}</span>
+          <img src="/favicon.svg" alt="" aria-hidden="true" className="brand-logo" />
+          <div className="brand-text">
+            <Link to="/" className="brand-title">
+              {t('app.title')}
+            </Link>
+            <span className="brand-sub">{t('app.subtitle')}</span>
+          </div>
         </div>
         <nav className="nav">
           <Link to="/">{t('nav.home')}</Link>

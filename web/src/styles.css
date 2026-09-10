@@ -51,6 +51,20 @@ a {
 }
 .brand {
   display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+.brand-logo {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: block;
+  flex: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+.brand-text {
+  display: flex;
   flex-direction: column;
 }
 .brand-title {

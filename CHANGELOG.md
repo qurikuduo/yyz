@@ -3,13 +3,25 @@
 本项目的所有重要变更记录于此。版本遵循语义化版本（SemVer）。
 All notable changes to this project are documented here. Versions follow SemVer.
 
-## [Unreleased]
+## [v1.3.0] — 2026-09-10
+
+### 新增 · Added
+- **默认 Logo 与 Favicon**：全新品牌标志（深绿圆角方块 + 白色心形 + 升起的太阳，寓意关怀与希望），用于浏览器标签页图标（SVG + PNG 回退 + Apple touch icon）与全站页头。
+  New brand logo and favicon (green rounded square, white heart, rising sun) used across the browser tab (SVG + PNG fallback + Apple touch icon) and the app header.
+- `theme-color` 元信息：移动端浏览器地址栏随品牌色。
+  `theme-color` meta so mobile browser chrome matches the brand color.
+
+### 变更 · Changed
+- 页头品牌区布局调整：logo 图标 + 标题/副标题两栏排布。
+  Header brand layout: logo icon beside the title/subtitle column.
+
+## [v1.2.0] — 2026-09-10
 
 ### 新增 · Added
 - **CI/CD（GitHub Actions）**：
   - `ci.yml`：push 到 master / PR 时自动编译前端（含 TS 类型检查）、构建 Docker 镜像并做容器冒烟测试。
     CI workflow: frontend build (typecheck), Docker image build, container smoke test.
-  - `release.yml`：推送 `v*` 标签时自动构建镜像并推送到 GHCR（`latest` / `1.1` / `1.1.0` 式标签），并从 CHANGELOG 提取说明创建 GitHub Release。
+  - `release.yml`：推送 `v*` 标签时自动构建镜像并推送到 GHCR（`latest` / `主.次` / 完整版本号标签），并从 CHANGELOG 提取说明创建 GitHub Release。
     Release workflow: on `v*` tags, build and push the image to GHCR and create a GitHub Release with notes extracted from the changelog.
 - `docker-compose.prebuilt.yml`：直接使用 GHCR 预构建镜像部署，无需本地构建。
   Prebuilt-image compose file that deploys straight from GHCR without a local build.
@@ -55,5 +67,7 @@ All notable changes to this project are documented here. Versions follow SemVer.
 
 ---
 
+[v1.3.0]: https://github.com/qurikuduo/yyz/releases/tag/v1.3.0
+[v1.2.0]: https://github.com/qurikuduo/yyz/releases/tag/v1.2.0
 [v1.1.0]: https://github.com/qurikuduo/yyz/releases/tag/v1.1.0
 [v1.0.0]: https://github.com/qurikuduo/yyz/releases/tag/v1.0.0
