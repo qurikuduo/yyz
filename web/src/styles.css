@@ -711,9 +711,43 @@ a {
   flex-wrap: wrap;
   margin-top: 6px;
 }
-.disclaimer {
+.page-note {
   margin-top: 28px;
   padding-top: 16px;
   border-top: 1px solid var(--border);
   font-size: 0.85rem;
+}
+
+/* Footer: source attribution + version */
+.footer-meta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 12px;
+  font-size: 0.85rem;
+}
+.gh-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  text-decoration: none;
+  font-weight: 600;
+}
+.gh-link:hover {
+  color: var(--text);
+}
+.gh-link svg {
+  fill: currentColor;
+  flex: none;
+}
+.ver-chip {
+  color: var(--muted);
+}
+.ver-chip em {
+  font-style: normal;
+  color: var(--warn);
+  font-weight: 600;
 }

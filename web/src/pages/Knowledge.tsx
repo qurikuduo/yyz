@@ -65,7 +65,7 @@ export default function Knowledge() {
         </div>
       ))}
 
-      <p className="muted disclaimer">{t('knowledge.disclaimer')}</p>
+      <p className="muted page-note">{t('knowledge.disclaimer')}</p>
     </section>
   )
 }

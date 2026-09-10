@@ -120,6 +120,7 @@ const zh: Dict = {
   'crisis.intl': '国际查询：findahelpline.com',
   'crisis.emergency': '若情况危急，请立即拨打当地急救电话（如中国大陆 120）。',
   'disclaimer.short': '本工具为筛查/自评用途，不构成临床诊断。如有自伤或自杀念头，请立即联系当地急救或心理危机热线。',
+  'footer.newer': '最新版本 v{v} 可用',
   'disclaimer.full':
     '本应用为筛查与自评工具，不构成医学诊断，也不能替代合格医疗/精神科专业人员的评估、诊断或治疗。量表分数仅供参考，存在假阳性/假阴性。任何结论都应结合专业临床评估。若你或他人处于危机中，请立即联系当地急救或心理危机热线。',
   'shared.heading': '查看已保存的结果',
@@ -264,6 +265,7 @@ const en: Dict = {
   'crisis.emergency': 'If this is an emergency, call your local emergency number now (e.g., 120 in Mainland China).',
   'disclaimer.short':
     'This is a screening/self-report tool, not a clinical diagnosis. If you have thoughts of self-harm or suicide, contact local emergency services or a crisis line immediately.',
+  'footer.newer': 'v{v} available',
   'disclaimer.full':
     'This application is a screening and self-report tool. It is not a medical diagnosis and does not replace evaluation, diagnosis, or treatment by a qualified medical/psychiatric professional. Scores are for reference only and may yield false positives/negatives. Any conclusion should be combined with professional clinical evaluation. If you or someone else is in crisis, contact local emergency services or a crisis line immediately.',
   'shared.heading': 'View a saved result',

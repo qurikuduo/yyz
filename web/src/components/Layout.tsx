@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { useI18n } from '../i18n'
 import LanguageToggle from './LanguageToggle'
-import Disclaimer from './Disclaimer'
+import Footer from './Footer'
 
 export default function Layout({ children }: { children: ReactNode }) {
   const { t } = useI18n()
@@ -22,9 +22,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         </nav>
       </header>
       <main className="app-main">{children}</main>
-      <footer className="app-footer">
-        <Disclaimer />
-      </footer>
+      <Footer />
     </div>
   )
 }

@@ -1,6 +1,6 @@
 {
   "name": "depression-selftest",
-  "version": "0.1.0",
+  "version": "1.1.0",
   "private": true,
   "description": "Evidence-based depression self-assessment web app (PHQ-9/PHQ-2, SDS, CES-D, BDI-II, DSM-5) with comprehensive synthesis, bilingual UI, shareable password-protected results, and a self-help knowledge base.",
   "scripts": {

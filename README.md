@@ -65,6 +65,7 @@ npm start                # Express 托管 API + 前端，http://localhost:8080
 - [架构 ARCHITECTURE](docs/ARCHITECTURE.md)
 - [免责与版权 DISCLAIMER](docs/DISCLAIMER.md)
 - [部署 DEPLOYMENT](docs/DEPLOYMENT.md)
+- [更新日志 CHANGELOG](CHANGELOG.md)
 
 ## 许可与版权 · License & copyright
 
